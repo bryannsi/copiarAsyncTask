@@ -16,6 +16,11 @@ namespace copiarAsyncTask
         {
             InitializeComponent();
         }
+        private class AgrupacionHilo
+        {
+            public List<Task> taskList { get; set; }
+            public string nombreHilo { get; set; }
+        }
 
         private async void button1_Click(object sender, EventArgs e)
         {
@@ -57,7 +62,7 @@ namespace copiarAsyncTask
                 : Directory.GetFiles(carpetaOrigen, "*", SearchOption.AllDirectories).ToList();
         }
 
-        public async Task<bool> CopyMultipleFilesAsync(IEnumerable<string> sourceFiles, string destinationFolder, int numThreads = 1)
+        public async Task<bool> CopyMultipleFilesAsync(IEnumerable<string> sourceFiles, string destinationFolder, int numThreads = 3)
         {
             // Validate parameters
             if (sourceFiles == null)
@@ -76,13 +81,26 @@ namespace copiarAsyncTask
                 numThreads = 1;
             }
 
-            // Create a list of tasks to copy the files
-            List<Task> tasks = new();
-            foreach (string sourceFile in sourceFiles)
+            List<string> listaHilos = new()
             {
-                string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
-                Task task = Task.Run(() => CopyFileAsync(sourceFile, destinationPath));
-                tasks.Add(task);
+                "Primer hilo",
+                "Segundo hilo",
+                "Tercer hilo"
+            };
+
+            // Crear una lista de tareas para copiar los archivos
+            List<AgrupacionHilo> todasLasTareas = new();
+            AgrupacionHilo agrupacionHilo = new();
+            foreach (var item in listaHilos)
+            {
+                foreach (var sourceFile in sourceFiles)
+                {
+                    string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
+                    Task task = Task.Run(() => CopyFileAsync(sourceFile, destinationPath));
+                    agrupacionHilo.taskList.Add(task);
+                }
+                agrupacionHilo.nombreHilo = item;
+                todasLasTareas.Add(agrupacionHilo);
             }
 
             // Use a progress bar to show the user the progress of the copy operation
@@ -90,8 +108,10 @@ namespace copiarAsyncTask
             progressBar1.Maximum = sourceFiles.Count();
 
             // Wait for all tasks to complete
-            await Task.WhenAll(tasks);
-
+            foreach (var item in todasLasTareas)
+            {
+                await Task.WhenAll(item.taskList);
+            }
             // Update the progress bar to show that the copy operation is complete
             //progressBar1.Value = sourceFiles.Count();
 
