@@ -4,7 +4,7 @@ namespace copiarAsyncTask;
 
 public partial class Form2 : Form
 {
-    private List<string>? listaRutaModulos { get; set; }
+    private List<string>? ListaRutaModulos { get; set; }
     private string CarpetaDestino { get;  set; }
     private int NumeroHilos { get; set; }
 
@@ -42,18 +42,18 @@ public partial class Form2 : Form
     }   
 
 
-    private void NewMethod(List<string>? listaRutaModulos)
+    private void NewMethod()
     {
         // Realizar la copia de archivos en hilos separados
-        if (listaRutaModulos == null) return;
-        var archivosPorHilo = (int)Math.Ceiling((double)listaRutaModulos.Count / NumeroHilos);
+        if (ListaRutaModulos == null) return;
+        var archivosPorHilo = (int)Math.Ceiling((double)ListaRutaModulos.Count / NumeroHilos);
 
         for (var i = 0; i < NumeroHilos; i++)
         {
             var indiceInicio = i * archivosPorHilo;
-            var indiceFin = Math.Min((i + 1) * archivosPorHilo, listaRutaModulos.Count);
+            var indiceFin = Math.Min((i + 1) * archivosPorHilo, ListaRutaModulos.Count);
 
-            var archivosHilo = listaRutaModulos.GetRange(indiceInicio, indiceFin - indiceInicio);
+            var archivosHilo = ListaRutaModulos.GetRange(indiceInicio, indiceFin - indiceInicio);
             // Realizar la copia de archivos para el hilo actual
             CopyController.CopiarArchivosHiloAsync(archivosHilo, CarpetaDestino).Wait();
 
@@ -72,11 +72,11 @@ public partial class Form2 : Form
         CarpetaDestino = "C:\\Users\\bchavarriah\\OneDrive - Grupo Colono S.A\\Escritorio\\CopyAsyncCarpetaDestino";
         NumeroHilos = 2; // Número de hilos determinado por un parámetro
     }
-    
+
     private void btnIniciarCopia_Click(object sender, EventArgs e)
     {
         var carpetaOrigen = ObtenerCarpetaPublicacion();
-        listaRutaModulos = ObtenerRutaModulos(carpetaOrigen);
+        ListaRutaModulos = ObtenerRutaModulos(carpetaOrigen);
         bgWorker.WorkerReportsProgress = true;
         bgWorker.DoWork += Worker_DoWork;
         bgWorker.ProgressChanged += Worker_ProgressChanged;
@@ -87,24 +87,24 @@ public partial class Form2 : Form
 
     private void Worker_DoWork(object sender, DoWorkEventArgs e)
     {
+        NewMethod();
+        // // Realizar la copia de archivos en hilos separados
+        // if (ListaRutaModulos == null) return;
+        // var archivosPorHilo = (int)Math.Ceiling((double)ListaRutaModulos.Count / NumeroHilos);
 
-        // Realizar la copia de archivos en hilos separados
-        if (listaRutaModulos == null) return;
-        var archivosPorHilo = (int)Math.Ceiling((double)listaRutaModulos.Count / NumeroHilos);
+        // for (var i = 0; i < NumeroHilos; i++)
+        // {
+        //     var indiceInicio = i * archivosPorHilo;
+        //     var indiceFin = Math.Min((i + 1) * archivosPorHilo, ListaRutaModulos.Count);
 
-        for (var i = 0; i < NumeroHilos; i++)
-        {
-            var indiceInicio = i * archivosPorHilo;
-            var indiceFin = Math.Min((i + 1) * archivosPorHilo, listaRutaModulos.Count);
+        //     var archivosHilo = ListaRutaModulos.GetRange(indiceInicio, indiceFin - indiceInicio);
+        //     // Realizar la copia de archivos para el hilo actual
+        //     CopyController.CopiarArchivosHiloAsync(archivosHilo, CarpetaDestino).Wait();
 
-            var archivosHilo = listaRutaModulos.GetRange(indiceInicio, indiceFin - indiceInicio);
-            // Realizar la copia de archivos para el hilo actual
-            CopyController.CopiarArchivosHiloAsync(archivosHilo, CarpetaDestino).Wait();
-
-            // Informar el progreso al BackgroundWorker
-            var progreso = (int)((double)(i + 1) / NumeroHilos * 100);
-            bgWorker.ReportProgress(progreso);
-        }
+        //     // Informar el progreso al BackgroundWorker
+        //     var progreso = (int)((double)(i + 1) / NumeroHilos * 100);
+        //     bgWorker.ReportProgress(progreso);
+        // }
     }
     private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
     {
