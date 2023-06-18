@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace copiarAsyncTask
+﻿namespace copiarAsyncTask
 {
     public partial class Form3 : Form
     {
@@ -18,23 +8,23 @@ namespace copiarAsyncTask
         }
         private class AgrupacionHilo
         {
-            public List<Task> taskList { get; set; }
-            public string nombreHilo { get; set; }
+            public List<Task> TaskList { get; set; } = null!;
+            public string NombreHilo { get; set; } = null!;
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private async void Button1_Click(object sender, EventArgs e)
         {
-            var carpetaOrigen = ObtenerCarpetaPublicacion();
+            var carpetaOrigen = ObtenerCarpetaPublicacion("Seleccionar carpeta de origen");
+            var carpetaDestino = ObtenerCarpetaPublicacion("Seleccionar carpeta de destino");
 
+            if (string.IsNullOrWhiteSpace(carpetaOrigen) || string.IsNullOrWhiteSpace(carpetaDestino)) return;
             // Get the source files
             IEnumerable<string>? sourceFiles = ObtenerRutaModulos(carpetaOrigen);
-            // Get the destination folder
-            string destinationFolder = "C:\\Users\\bchavarriah\\OneDrive - Grupo Colono S.A\\Escritorio\\CopyAsyncCarpetaDestino";
 
             if (sourceFiles != null)
             {
                 // Copy the files
-                bool success = await CopyMultipleFilesAsync(sourceFiles, destinationFolder);
+                bool success = await CopyMultipleFilesAsync(sourceFiles, carpetaDestino);
 
                 // If the copy operation was successful, show a message box
                 if (success)
@@ -44,10 +34,10 @@ namespace copiarAsyncTask
             }
         }
 
-        private static string ObtenerCarpetaPublicacion()
+        private static string ObtenerCarpetaPublicacion(string nombreFolderBrowserDialog = "Seleccionar carpeta de módulos a publicar.")
         {
             using var folderBrowser = new FolderBrowserDialog();
-            folderBrowser.Description = "Seleccionar carpeta de módulos a publicar.";
+            folderBrowser.Description = nombreFolderBrowserDialog;
             folderBrowser.ShowNewFolderButton = true;
             folderBrowser.UseDescriptionForTitle = true;
 
@@ -67,12 +57,12 @@ namespace copiarAsyncTask
             // Validate parameters
             if (sourceFiles == null)
             {
-                throw new ArgumentNullException("sourceFiles");
+                throw new ArgumentNullException(nameof(sourceFiles));
             }
 
             if (destinationFolder == null)
             {
-                throw new ArgumentNullException("destinationFolder");
+                throw new ArgumentNullException(nameof(destinationFolder));
             }
 
             // Check if the number of threads is valid
@@ -91,29 +81,37 @@ namespace copiarAsyncTask
             // Crear una lista de tareas para copiar los archivos
             List<AgrupacionHilo> todasLasTareas = new();
             AgrupacionHilo agrupacionHilo = new();
-            foreach (var item in listaHilos)
+
+            // foreach (var item in listaHilos)
+            // {
+            //     foreach (var sourceFile in sourceFiles)
+            //     {
+            //         string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
+            //         Task task = Task.Run(() => CopyFileAsync(sourceFile, destinationPath));
+            //         agrupacionHilo.TaskList.Add(task);
+            //     }
+            //     agrupacionHilo.NombreHilo = item;
+            //     todasLasTareas.Add(agrupacionHilo);
+            // }
+
+            List<Task> tasks = new();
+            foreach (string sourceFile in sourceFiles)
             {
-                foreach (var sourceFile in sourceFiles)
-                {
-                    string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
-                    Task task = Task.Run(() => CopyFileAsync(sourceFile, destinationPath));
-                    agrupacionHilo.taskList.Add(task);
-                }
-                agrupacionHilo.nombreHilo = item;
-                todasLasTareas.Add(agrupacionHilo);
+                string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
+                Task task = Task.Run(() => CopyFileAsync(sourceFile, destinationPath));
+                tasks.Add(task);
             }
 
             // Use a progress bar to show the user the progress of the copy operation
-            //ProgressBar progressBar = new();
             progressBar1.Maximum = sourceFiles.Count();
 
+             await Task.WhenAll(tasks);
+
             // Wait for all tasks to complete
-            foreach (var item in todasLasTareas)
-            {
-                await Task.WhenAll(item.taskList);
-            }
-            // Update the progress bar to show that the copy operation is complete
-            //progressBar1.Value = sourceFiles.Count();
+            // foreach (var item in todasLasTareas)
+            // {
+            //     await Task.WhenAll(item.TaskList);
+            // }
 
             // Return true if the copy operation was successful
             return true;
@@ -151,7 +149,7 @@ namespace copiarAsyncTask
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void Button2_Click(object sender, EventArgs e)
         {
             label1.Text = (Convert.ToInt32(label1.Text) + 1).ToString();
         }

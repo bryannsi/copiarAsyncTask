@@ -42,7 +42,7 @@
             button1.TabIndex = 0;
             button1.Text = "button1";
             button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            button1.Click += Button1_Click;
             // 
             // button2
             // 
@@ -54,7 +54,7 @@
             button2.TabIndex = 0;
             button2.Text = "NO BLOCKED UI";
             button2.UseVisualStyleBackColor = false;
-            button2.Click += button2_Click;
+            button2.Click += Button2_Click;
             // 
             // progressBar1
             // 
